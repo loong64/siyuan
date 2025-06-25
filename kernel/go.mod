@@ -35,7 +35,7 @@ require (
 	github.com/gin-contrib/sessions v1.0.4
 	github.com/gin-contrib/sse v1.1.0
 	github.com/gin-gonic/gin v1.10.1
-	github.com/go-ole/go-ole v1.3.0
+	github.com/go-ole/go-ole v1.3.1-0.20250305162226-6867ec158e36
 	github.com/goccy/go-json v0.10.5
 	github.com/gofrs/flock v0.12.1
 	github.com/golang-jwt/jwt/v5 v5.2.2
