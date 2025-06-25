@@ -74,6 +74,7 @@ jobs:
       run: |
         export ELECTRON_MIRROR=https://github.com/darkyzhou/electron-loong64/releases/download/
         export electron_use_remote_checksums=1 
+        pnpm install electron@v35.4.0 -D
         pnpm install --no-frozen-lockfile
       working-directory: ${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}/app
 
