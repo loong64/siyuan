@@ -8,10 +8,12 @@ on:
 
 # ref https://docs.github.com/zh/actions/learn-github-actions/variables
 env:
-  repo_name_android: "siyuan-android"
   repo_name: "siyuan"
-  repo_owner: "siyuan-note"
+  repo_owner: "multiarchstore"
   package_json: "app/package.json"
+
+permissions:
+  contents: write
 
 jobs:
   create_release:
@@ -93,63 +95,24 @@ jobs:
       matrix:
         config:
           - os: ubuntu-22.04
-            name: ubuntu build linux.AppImage
+            name: ubuntu build linux.tar.gz
             kernel_path: "../app/kernel-linux/SiYuan-Kernel"
             build_args_prefix: "-s -w -X"
             build_args_suffix: "Mode=prod"
             electron_args: "dist-linux-loong64"
             goos: "linux"
-            goarch: "amd64"
-            suffix: "linux.AppImage"
-          - os: ubuntu-22.04
-            name: ubuntu build linux.tar.gz
-            kernel_path: "../app/kernel-linux/SiYuan-Kernel"
-            build_args_prefix: "-s -w -X"
-            build_args_suffix: "Mode=prod"
-            electron_args: "dist-linux"
-            goos: "linux"
-            goarch: "amd64"
+            goarch: "loong64"
             suffix: "linux.tar.gz"
-          - os: macos-latest
-            name: macos build mac.dmg
-            kernel_path: "../app/kernel-darwin/SiYuan-Kernel"
-            build_args_prefix: "-s -w -X"
-            build_args_suffix: "Mode=prod"
-            electron_args: "dist-darwin"
-            goos: "darwin"
-            goarch: "amd64"
-            suffix: "mac.dmg"
-          - os: macos-latest
-            name: macos build mac-arm64.dmg
-            kernel_path: "../app/kernel-darwin-arm64/SiYuan-Kernel"
-            build_args_prefix: "-s -w -X"
-            build_args_suffix: "Mode=prod"
-            electron_args: "dist-darwin-arm64"
-            goos: "darwin"
-            goarch: "arm64"
-            suffix: "mac-arm64.dmg"
-          - os: windows-latest
-            name: windows build win.exe
-            kernel_path: "../app/kernel/SiYuan-Kernel.exe"
-            build_args_prefix: "-s -w -H=windowsgui -X"
-            build_args_suffix: "Mode=prod"
-            electron_args: "dist"
-            goos: "windows"
-            gobin: "bin"
-            mingwsys: "MINGW64"
-            goarch: "amd64"
-            suffix: "win.exe"
-
     steps:
     - uses: actions/checkout@v4
       with:
         path: ${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}
 
-    - name: Set up MingGW
-      uses: msys2/setup-msys2@v2
-      if: "contains( matrix.config.goos, 'windows')"
-      with:
-        install: p7zip mingw-w64-x86_64-lua
+    # - name: Set up MingGW
+    #   uses: msys2/setup-msys2@v2
+    #   if: "contains( matrix.config.goos, 'windows')"
+    #   with:
+    #     install: p7zip mingw-w64-x86_64-lua
 
     - name: Set up Go
       uses: actions/setup-go@v5
@@ -157,28 +120,33 @@ jobs:
         go-version-file: ${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}/kernel/go.mod
     - run: go version
 
-    - name: Set up goversioninfo
-      run: go get github.com/josephspurrier/goversioninfo/cmd/goversioninfo && go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo
-      if: "contains( matrix.config.goos, 'windows')"
-      working-directory: ${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}/kernel
-      env:
-        GO111MODULE: on
-        CGO_ENABLED: 1
-        GOOS: ${{ matrix.config.goos }}
-        GOPATH: ${{ github.workspace }}/go
-        GOARCH: ${{ matrix.config.goarch }}
+    # - name: Set up goversioninfo
+    #   run: go get github.com/josephspurrier/goversioninfo/cmd/goversioninfo && go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo
+    #   if: "contains( matrix.config.goos, 'windows')"
+    #   working-directory: ${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}/kernel
+    #   env:
+    #     GO111MODULE: on
+    #     CGO_ENABLED: 1
+    #     GOOS: ${{ matrix.config.goos }}
+    #     GOPATH: ${{ github.workspace }}/go
+    #     GOARCH: ${{ matrix.config.goarch }}
 
     - name: Set up Node
       uses: actions/setup-node@v4
       with:
         node-version: 20
 
+    - uses: mlugg/setup-zig@v2
+
     - name: Install Node pnpm
       run: npm install -g ${{ needs.create_release.outputs.packageManager }}
       working-directory: ${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}/app
 
     - name: Install Node Dependencies
-      run: pnpm install --no-frozen-lockfile
+      run: |
+        export ELECTRON_MIRROR=https://github.com/darkyzhou/electron-loong64/releases/download/
+        export electron_use_remote_checksums=1 
+        pnpm install --no-frozen-lockfile
       working-directory: ${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}/app
 
     - name: Building UI
@@ -210,13 +178,13 @@ jobs:
       with:
         path: ${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}/app/kernel-darwin-arm64
 
-    - name: Generate Icon Resource and Properties/Version Info For Windows
-      run: ${{ github.workspace }}\go\${{ matrix.config.gobin }}\goversioninfo -platform-specific=true -icon="resource\icon.ico" -manifest="resource\goversioninfo.exe.manifest"
-      if: "contains( matrix.config.goos, 'windows')"
-      working-directory: ${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}/kernel
+    # - name: Generate Icon Resource and Properties/Version Info For Windows
+    #   run: ${{ github.workspace }}\go\${{ matrix.config.gobin }}\goversioninfo -platform-specific=true -icon="resource\icon.ico" -manifest="resource\goversioninfo.exe.manifest"
+    #   if: contains( matrix.config.goos, 'windows')
+    #   working-directory: ${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}/kernel
     
     - name: Building Kernel
-      run: go build --tags fts5 -o "${{ matrix.config.kernel_path }}" -v -ldflags "${{ matrix.config.build_args_prefix }} github.com/${{ env.repo_owner }}/${{ env.repo_name }}/kernel/util.${{ matrix.config.build_args_suffix }}"
+      run: go build --tags fts5 -o "${{ matrix.config.kernel_path }}" -v -ldflags "${{ matrix.config.build_args_prefix }} github.com/${{ env.repo_owner }}/${{ env.repo_name }}/kernel/util.${{ matrix.config.build_args_suffix }} -linkmode=external -extldflags=-static"
       working-directory: ${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}/kernel
       env:
         GO111MODULE: on
@@ -224,6 +192,7 @@ jobs:
         GOOS: ${{ matrix.config.goos }}
         GOPATH: ${{ github.workspace }}/go
         GOARCH: ${{ matrix.config.goarch }}
+        CC: "zig cc -target loongarch64-linux-musl -I. -L/usr/local/musl/lib -lunwind"
       
     - name: Building Electron App
       run: pnpm run ${{ matrix.config.electron_args }}
