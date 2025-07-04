@@ -1,9 +1,9 @@
-name: CD For SiYuan
+name: CD For SiYuan LoongArch
 
 on:
-  # push:
-  #   tags:
-  #     - '*-dev*'
+  push:
+    tags:
+      - 'v*.*.*'
   workflow_dispatch:
 
 # ref https://docs.github.com/zh/actions/learn-github-actions/variables
@@ -128,8 +128,8 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
           files: ${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}/app/build/*
-          prerelease: true
-          tag_name: beta
+          prerelease: ${{ startsWith(github.ref, 'refs/tags') && false || true }}
+          tag_name: ${{ startsWith(github.ref, 'refs/tags') && github.ref_name || 'beta' }}
 
     # - name: Upload Release
     #   uses: actions/upload-release-asset@v1
