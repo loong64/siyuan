@@ -132,7 +132,7 @@ jobs:
       with:
           files: ${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}/app/build/*
           prerelease: false
-          tag_name:  github.ref_name
+          tag_name:  ${{ github.ref_name }}
 
     # - name: Upload Release
     #   uses: actions/upload-release-asset@v1
