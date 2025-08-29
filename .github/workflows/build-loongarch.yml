@@ -120,7 +120,7 @@ jobs:
         GOOS: ${{ matrix.config.goos }}
         GOPATH: ${{ github.workspace }}/go
         GOARCH: ${{ matrix.config.goarch }}
-        CC: "zig cc -target loongarch64-linux-musl -I. -L/usr/local/musl/lib -lunwind"
+        CC: "zig cc -target loongarch64-linux-musl -I. -static -lunwind"
       
     - name: Building Electron App
       run: pnpm run ${{ matrix.config.electron_args }}
