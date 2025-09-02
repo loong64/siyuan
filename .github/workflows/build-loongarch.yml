@@ -11,7 +11,7 @@ on:
 # ref https://docs.github.com/zh/actions/learn-github-actions/variables
 env:
   repo_name: "siyuan"
-  repo_owner: "multiarchstore"
+  repo_owner: "loong64"
   package_json: "app/package.json"
 
 permissions:
