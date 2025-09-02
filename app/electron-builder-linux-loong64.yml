@@ -27,7 +27,7 @@ linux:
     }
   }
   extraResources:
-    - from: "kernel-linux-loong64"
+    - from: "kernel-linux/SiYuan-Kernel"
       to: "kernel"
   target:
     - target: "tar.gz"
