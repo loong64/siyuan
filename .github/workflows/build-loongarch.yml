@@ -26,7 +26,7 @@ jobs:
         config:
           - os: ubuntu-22.04
             name: ubuntu build linux.tar.gz
-            kernel_path: "./app/kernel-linux/SiYuan-Kernel"
+            kernel_path: "./app/kernel-linux-loong64/SiYuan-Kernel"
             build_args_prefix: "-s -w -X"
             build_args_suffix: "Mode=prod"
             electron_args: "dist-linux-loong64"
