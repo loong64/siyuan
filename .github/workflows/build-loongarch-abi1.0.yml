@@ -107,9 +107,11 @@ jobs:
       uses: softprops/action-gh-release@v2
       if: contains( github.ref, 'refs/tags')
       with:
-          files: ${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}/app/build/*
-          prerelease: false
-          tag_name:  ${{ github.ref_name }}
+        files: | 
+          ${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}/app/build/*.deb
+          ${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}/app/build/*.tar.gz
+        prerelease: false
+        tag_name:  ${{ github.ref_name }}
 
     # - name: Upload Release
     #   uses: actions/upload-release-asset@v1
