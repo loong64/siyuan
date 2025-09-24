@@ -34,8 +34,8 @@ linux:
       arch: "loong64"
     # - target: "AppImage"
     #   arch: "loong64"
-    - target: "deb"
-      arch: "loong64"
+    # - target: "deb"
+    #   arch: "loong64"
 
 extraResources:
   - from: "changelogs"
