@@ -31,11 +31,11 @@ linux:
       to: "kernel"
   target:
     - target: "tar.gz"
-      arch: "loongarch64"
+      arch: "loong64"
     # - target: "AppImage"
     #   arch: "loong64"
     - target: "deb"
-      arch: "loongarch64"
+      arch: "loong64"
 
 extraResources:
   - from: "changelogs"
