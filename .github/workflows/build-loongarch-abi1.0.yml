@@ -1,4 +1,4 @@
-name: CD For SiYuan LoongArch ABI2.0
+name: CD For SiYuan LoongArch ABI1.0
 
 on:
   push:
@@ -26,10 +26,11 @@ jobs:
         config:
           - os: ubuntu-latest
             name: ubuntu build linux.tar.gz
-            kernel_path: "./app/kernel-linux-loong64/SiYuan-Kernel"
+            kernel_path: "./app/kernel-linux-loongarch64"
+            kernel_name: "SiYuan-Kernel"
             build_args_prefix: "-s -w -X"
             build_args_suffix: "Mode=prod"
-            electron_args: "dist-linux-loong64"
+            electron_args: "dist-linux-loongarch64"
             goos: "linux"
             goarch: "loong64"
             suffix: "linux.tar.gz"
@@ -37,29 +38,6 @@ jobs:
     - uses: actions/checkout@v4
       with:
         path: ${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}
-
-    # - name: Set up MingGW
-    #   uses: msys2/setup-msys2@v2
-    #   if: "contains( matrix.config.goos, 'windows')"
-    #   with:
-    #     install: p7zip mingw-w64-x86_64-lua
-
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version-file: ${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}/kernel/go.mod
-    - run: go version
-
-    # - name: Set up goversioninfo
-    #   run: go get github.com/josephspurrier/goversioninfo/cmd/goversioninfo && go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo
-    #   if: "contains( matrix.config.goos, 'windows')"
-    #   working-directory: ${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}/kernel
-    #   env:
-    #     GO111MODULE: on
-    #     CGO_ENABLED: 1
-    #     GOOS: ${{ matrix.config.goos }}
-    #     GOPATH: ${{ github.workspace }}/go
-    #     GOARCH: ${{ matrix.config.goarch }}
 
     - name: Set up Node
       uses: actions/setup-node@v4
@@ -75,6 +53,7 @@ jobs:
     - name: Install Node Dependencies
       run: |
         electron_use_remote_checksums=1 pnpm install --no-frozen-lockfile
+        electron_use_remote_checksums=1 pnpm install electron@v31.7.7 -D
       working-directory: ${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}/app
 
     - name: Building UI
@@ -110,17 +89,15 @@ jobs:
     #   run: ${{ github.workspace }}\go\${{ matrix.config.gobin }}\goversioninfo -platform-specific=true -icon="resource\icon.ico" -manifest="resource\goversioninfo.exe.manifest"
     #   if: contains( matrix.config.goos, 'windows')
     #   working-directory: ${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}/kernel
-    
+
     - name: Building Kernel
-      run: go build --tags fts5 -o "${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}/${{ matrix.config.kernel_path }}" -v -ldflags "${{ matrix.config.build_args_prefix }} github.com/${{ env.repo_owner }}/${{ env.repo_name }}/kernel/util.${{ matrix.config.build_args_suffix }} -linkmode=external -extldflags=-static"
-      working-directory: ${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}/kernel
-      env:
-        GO111MODULE: on
-        CGO_ENABLED: 1
-        GOOS: ${{ matrix.config.goos }}
-        GOPATH: ${{ github.workspace }}/go
-        GOARCH: ${{ matrix.config.goarch }}
-        CC: "zig cc -target loongarch64-linux-musl -I. -static -lunwind"
+      uses: OpenListTeam/cgo-actions@v1.2.3
+      with:
+        dir: ${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}/kernel
+        targets: 'linux-loong64-abi1.0'
+        out-dir: "${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}/${{ matrix.config.kernel_path }}"
+        output: ${{ matrix.config.kernel_name }}
+        flags: -ldflags "${{ matrix.config.build_args_prefix }} github.com/${{ env.repo_owner }}/${{ env.repo_name }}/kernel/util.${{ matrix.config.build_args_suffix }} -linkmode=external -extldflags=-static
       
     - name: Building Electron App
       run: pnpm run ${{ matrix.config.electron_args }}
