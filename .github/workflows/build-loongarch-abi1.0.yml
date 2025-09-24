@@ -97,7 +97,7 @@ jobs:
         targets: 'linux-loong64-abi1.0'
         out-dir: "${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}/${{ matrix.config.kernel_path }}"
         output: ${{ matrix.config.kernel_name }}
-        flags: -ldflags "${{ matrix.config.build_args_prefix }} github.com/${{ env.repo_owner }}/${{ env.repo_name }}/kernel/util.${{ matrix.config.build_args_suffix }} -linkmode=external -extldflags=-static
+        flags: -ldflags ${{ matrix.config.build_args_prefix }} github.com/${{ env.repo_owner }}/${{ env.repo_name }}/kernel/util.${{ matrix.config.build_args_suffix }} -linkmode=external -extldflags=-static
       
     - name: Building Electron App
       run: pnpm run ${{ matrix.config.electron_args }}
