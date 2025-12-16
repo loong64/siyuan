@@ -95,7 +95,7 @@ jobs:
         targets: 'linux-loong64-abi1.0'
         out-dir: "${{ matrix.config.kernel_path }}"
         output: ${{ matrix.config.kernel_name }}
-        x-flags: github.com/siyuan-note/siyuan/kernel/util.${{ matrix.config.build_args_suffix }}
+        x-flags: github.com/${{ env.repo_owner }}/${{ env.repo_name }}/kernel/util.${{ matrix.config.build_args_suffix }}
       
     - name: Building Electron App
       run: pnpm run ${{ matrix.config.electron_args }}
