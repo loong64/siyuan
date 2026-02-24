@@ -70,7 +70,7 @@ import {copyPlainText, encodeBase64, isInIOS, isMac, isOnlyMeta, readClipboard} 
 import {MenuItem} from "../../menus/Menu";
 import {fetchPost, fetchSyncPost} from "../../util/fetch";
 import {onGet} from "../util/onGet";
-import {clearTableCell, isIncludeCell, setTableAlign} from "../util/table";
+import {clearTableCell, isIncludeCell, setTableAlign, updateTableTitle} from "../util/table";
 import {countBlockWord, countSelectWord} from "../../layout/status";
 import {showMessage} from "../../dialog/message";
 import {getBacklinkHeadingMore, loadBreadcrumb} from "./renderBacklink";
@@ -1510,7 +1510,7 @@ export class WYSIWYG {
                                         // 合并背景色不会修改，需要等计算完毕
                                         setTimeout(() => {
                                             if (tableBlockElement) {
-                                                selectCellElements[0].innerHTML = html + "<wbr>";
+                                                selectCellElements[0].innerHTML = (html.replace(/<br>$/, "") || "<br>") + "<wbr>";
                                                 selectCellElements[0].colSpan = colSpan;
                                                 selectCellElements[0].rowSpan = rowSpan;
                                                 focusByWbr(selectCellElements[0], document.createRange());
@@ -1751,11 +1751,10 @@ export class WYSIWYG {
                     }
                     if (selectElement.length > 0) {
                         range.collapse(true);
-                        if (range.commonAncestorContainer.nodeType === 1 &&
-                            range.startContainer.childNodes[range.startOffset] &&
-                            range.startContainer.childNodes[range.startOffset].nodeType === 1 &&
-                            (range.commonAncestorContainer as HTMLElement).classList.contains("protyle-wysiwyg")) {
-                            focusBlock(range.startContainer.childNodes[range.startOffset] as Element);
+                        // https://github.com/siyuan-note/siyuan/issues/17092 & https://github.com/siyuan-note/siyuan/issues/15296
+                        const endElement = hasClosestBlock(mouseUpEvent.target as HTMLElement);
+                        if (endElement && document.activeElement.classList.contains("protyle-wysiwyg")) {
+                            focusBlock(endElement);
                         }
                         return;
                     }
@@ -2663,6 +2662,12 @@ export class WYSIWYG {
                     event.stopPropagation();
                 }
             });
+            if (tableElement) {
+                if (hasClosestByTag(event.target, "CAPTION")) {
+                    updateTableTitle(protyle, tableElement);
+                    return;
+                }
+            }
             // 面包屑定位，需至于前，否则 return 的元素就无法进行面包屑定位
             if (protyle.options.render.breadcrumb) {
                 protyle.breadcrumb.render(protyle, false, hasClosestBlock(event.target));
