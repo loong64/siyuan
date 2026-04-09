@@ -35,14 +35,14 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
+          path: ${{ github.workspace }}
+
+      - uses: actions/checkout@v6
+        with:
           repository: siyuan-note/siyuan
           ref: ${{ github.event.inputs.version }}
           path: ${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}
-      
-      - uses: actions/checkout@v6
-        with:
-          path: ${{ github.workspace }}
-
+    
       - name: Applying Patch for SiYuan
         run: |
           git apply ${{ github.workspace }}/patches/loongarch64-override-electron-and-electron-builder.patch
