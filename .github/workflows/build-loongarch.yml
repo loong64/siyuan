@@ -87,7 +87,7 @@ jobs:
         with:
           dir: ${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}/kernel
           targets: 'linux-loong64-musl'
-          out-dir: "${{ matrix.config.kernel_path }}"
+          out-dir: "${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}/${{ matrix.config.kernel_path }}"
           output: ${{ matrix.config.kernel_name }}
           x-flags: github.com/siyuan-note/siyuan/kernel/util.${{ matrix.config.build_args_suffix }}
         
@@ -99,7 +99,6 @@ jobs:
           electron_use_remote_checksums: 1
 
       - name: Upload to release
-        if: contains( github.ref, 'refs/tags')
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
