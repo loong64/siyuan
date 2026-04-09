@@ -26,23 +26,31 @@ jobs:
         config:
           - os: ubuntu-latest
             name: ubuntu build linux.tar.gz
-            kernel_path: "./app/kernel-linux-loong64/SiYuan-Kernel"
+            kernel_path: "./app/kernel-linux-loong64"
+            kernel_name: "SiYuan-Kernel"
             build_args_prefix: "-s -w -X"
             build_args_suffix: "Mode=prod"
             goos: "linux"
             goarch: "loong64"
             suffix: "linux.tar.gz"
     steps:
+      - name: Check release
+        id: check_release
+        run: |
+          gh release view ${{ inputs.version }} -R ${{ github.repository }} >/dev/null 2>&1 && echo "create=0" >> $GITHUB_ENV || echo "create=1" >> $GITHUB_ENV
+
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/checkout@v6
+        with:
+          path: ${{ github.workspace }}
+
       - uses: actions/checkout@v6
         with:
           repository: siyuan-note/siyuan
           ref: ${{ github.event.inputs.version }}
           path: ${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}
-      
-      - uses: actions/checkout@v6
-        with:
-          path: ${{ github.workspace }}
-
+    
       - name: Applying Patch for SiYuan
         run: |
           git apply ${{ github.workspace }}/patches/loongarch64-override-electron-and-electron-builder.patch
@@ -87,9 +95,10 @@ jobs:
         with:
           dir: ${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}/kernel
           targets: 'linux-loong64-musl'
-          out-dir: "${{ matrix.config.kernel_path }}"
+          out-dir: "${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}/${{ matrix.config.kernel_path }}"
           output: ${{ matrix.config.kernel_name }}
-          x-flags: github.com/siyuan-note/siyuan/kernel/util.${{ matrix.config.build_args_suffix }}
+          x-flags: github.com/${{ env.repo_owner }}/${{ env.repo_name }}/kernel/util.${{ matrix.config.build_args_suffix }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
         
       - name: Building Electron App
         run: pnpm electron-builder --linux --config ${{ github.workspace }}/electron-builder-linux-loong64.yml --publish=never
@@ -98,14 +107,47 @@ jobs:
           ELECTRON_MIRROR: "https://github.com/darkyzhou/electron-loong64/releases/download/"
           electron_use_remote_checksums: 1
 
+      - name: Create release
+        if: env.create == '1'
+        run: |
+          latestFlag="--latest=true"
+          gh release create ${{ github.event.inputs.version }} -R ${{ github.repository }} --title ${{ github.event.inputs.version }} --notes "**Full Changelog**: [${{ github.event.inputs.version }}](https://github.com/siyuan-note/siyuan/releases/tag/${{ github.event.inputs.version }})" ${latestFlag} || true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Sign Release
+        working-directory: ${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}
+        shell: bash
+        run: |
+          cd app/build/
+
+          # 开启 nullglob：如果没有匹配文件，glob 展开为空字符串，而不是保留通配符本身
+          shopt -s nullglob
+          
+          files=(*.deb *.tar.gz)
+          
+          if [ ${#files[@]} -eq 0 ]; then
+              echo "No .deb or .tar.gz files found."
+              exit 1
+          fi
+          
+          echo "Processing ${#files[@]} files..."
+          
+          # 生成校验和文件
+          for f in "${files[@]}"; do
+              sha256sum "$f" > "$f.sha256"
+          done
+          
+          ls -lFh "${files[@]/%/.sha256}"
+
       - name: Upload to release
-        if: contains( github.ref, 'refs/tags')
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
         run: |
-          for i in ${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}/app/build/*.deb; do
-            gh release upload  ${{ github.event.inputs.version }} $i
-          done
-          for i in ${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}/app/build/*.tar.gz; do
-            gh release upload  ${{ github.event.inputs.version }} $i
+          shopt -s nullglob
+          cd ${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}/app/build
+          files=(*.deb *.tar.gz *.sha256)
+          for i in "${files[@]}"; do
+            gh release upload  ${{ github.event.inputs.version }} $i --repo ${{ github.repository }}
           done
