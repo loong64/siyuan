@@ -1,0 +1,111 @@
+name: CD For SiYuan LoongArch ABI2.0
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'siyuan upstream version'
+        required: true
+        default: 'v3.6.3'
+
+# ref https://docs.github.com/zh/actions/learn-github-actions/variables
+env:
+  repo_name: "siyuan"
+  repo_owner: "loong64"
+  package_json: "app/package.json"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ${{ matrix.config.os }}
+    name: ${{ matrix.config.name }}
+    strategy:
+      matrix:
+        config:
+          - os: ubuntu-latest
+            name: ubuntu build linux.tar.gz
+            kernel_path: "./app/kernel-linux-loong64/SiYuan-Kernel"
+            build_args_prefix: "-s -w -X"
+            build_args_suffix: "Mode=prod"
+            goos: "linux"
+            goarch: "loong64"
+            suffix: "linux.tar.gz"
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          repository: siyuan-note/siyuan
+          ref: ${{ github.event.inputs.version }}
+          path: ${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}
+      
+      - uses: actions/checkout@v6
+        with:
+          path: ${{ github.workspace }}
+
+      - name: Applying Patch for SiYuan
+        run: |
+          git apply ${{ github.workspace }}/patches/loongarch64-old-world-override-electron-and-electron-builder.patch
+        working-directory: ${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: ${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}/kernel/go.mod
+      - run: go version
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Node pnpm
+        run: npm install -g pnpm
+        working-directory: ${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}/app
+
+      - name: Install Node Dependencies
+        run: |
+          electron_use_remote_checksums=1 pnpm install --no-frozen-lockfile
+        working-directory: ${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}/app
+
+      - name: Building UI
+        run: pnpm run build
+        working-directory: ${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}/app
+
+      - name: Remove Build Directory
+        run: rm -rf ${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}/app/build
+
+      - name: Remove Kernel Directory for Linux
+        run: rm -rf ${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}/app/kernel-linux
+
+      - name: Overriding go-ole for loongarch64
+        working-directory: ${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}/kernel
+        run: go get github.com/go-ole/go-ole@6c7f902
+
+      - name: Building Kernel
+        uses: OpenListTeam/cgo-actions@v1.2.4
+        with:
+          dir: ${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}/kernel
+          targets: 'linux-loong64-abi1.0'
+          out-dir: "${{ matrix.config.kernel_path }}"
+          output: ${{ matrix.config.kernel_name }}
+          x-flags: github.com/siyuan-note/siyuan/kernel/util.${{ matrix.config.build_args_suffix }}
+        
+      - name: Building Electron App
+        run: pnpm electron-builder --linux --config ${{ github.workspace }}/electron-builder-linux-loongarch64.yml --publish=never
+        working-directory: ${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}/app
+        env:
+          ELECTRON_MIRROR: "ELECTRON_MIRROR=https://github.com/loong64-abi1-0/electron/releases/download/"
+          electron_use_remote_checksums: 1
+
+      - name: Upload to release
+        if: contains( github.ref, 'refs/tags')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          for i in ${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}/app/build/*.deb; do
+            gh release upload  ${{ github.event.inputs.version }} $i
+          done
+          for i in ${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}/app/build/*.tar.gz; do
+            gh release upload  ${{ github.event.inputs.version }} $i
+          done
