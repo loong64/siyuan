@@ -26,7 +26,8 @@ jobs:
         config:
           - os: ubuntu-latest
             name: ubuntu build linux.tar.gz
-            kernel_path: "./app/kernel-linux-loong64/SiYuan-Kernel"
+            kernel_path: "./app/kernel-linux-loong64"
+            kernel_name: "SiYuan-Kernel"
             build_args_prefix: "-s -w -X"
             build_args_suffix: "Mode=prod"
             goos: "linux"
