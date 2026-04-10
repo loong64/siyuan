@@ -99,6 +99,7 @@ jobs:
           out-dir: "${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}/${{ matrix.config.kernel_path }}"
           output: ${{ matrix.config.kernel_name }}
           x-flags: github.com/siyuan-note/siyuan/kernel/util.${{ matrix.config.build_args_suffix }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
         
       - name: Building Electron App
         run: pnpm electron-builder --linux --config ${{ github.workspace }}/electron-builder-linux-loong64.yml --publish=never
