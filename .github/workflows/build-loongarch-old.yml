@@ -105,7 +105,7 @@ jobs:
         run: pnpm electron-builder --linux --config ${{ github.workspace }}/electron-builder-linux-loongarch64.yml --publish=never
         working-directory: ${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}/app
         env:
-          ELECTRON_MIRROR: "ELECTRON_MIRROR=https://github.com/loong64-abi1-0/electron/releases/download/"
+          ELECTRON_MIRROR: "https://github.com/loong64-abi1-0/electron/releases/download/"
           electron_use_remote_checksums: 1
 
       - name: Create release
