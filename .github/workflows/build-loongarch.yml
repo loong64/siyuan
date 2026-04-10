@@ -34,6 +34,14 @@ jobs:
             goarch: "loong64"
             suffix: "linux.tar.gz"
     steps:
+      - name: Check release
+        id: check_release
+        run: |
+          gh release view ${{ github.event.inputs.version }} -R ${{ github.repository }} | grep SHASUMS256.txt.asc >/dev/null 2>&1 || create=1
+          echo "create=${create:-0}" >> $GITHUB_ENV
+          echo "create=${create:-0}" >> $GITHUB_OUTPUT
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/checkout@v6
         with:
           path: ${{ github.workspace }}
@@ -99,6 +107,29 @@ jobs:
           ELECTRON_MIRROR: "https://github.com/darkyzhou/electron-loong64/releases/download/"
           electron_use_remote_checksums: 1
 
+      - name: Create release
+        if: env.create == '1'
+        run: |
+          latestFlag=""
+          if [ "${{ env.latest_version }}" != "true" ]; then
+            latestFlag="--latest=false"
+          fi
+          gh release create ${{ github.event.inputs.version }} -R ${{ github.repository }} --title ${{ github.event.inputs.version }} --notes "**Full Changelog**: [${{ github.event.inputs.version }}](https://github.com/siyuan-note/siyuan/releases/tag/${{ github.event.inputs.version }})" ${latestFlag} || true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Sign Release
+        working-directory: ${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}
+        run: |
+          cd app/build/
+          rm -f SHASUMS256.txt
+          sha256sum *.deb *.tar.gz > SHASUMS256.txt
+          ls -lFh *.deb *.tar.gz SHASUMS256.txt
+
+          for f in *.deb *.tar.gz; do
+            sha256sum "$f" > "$f".sha256
+          done
+
       - name: Upload to release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -109,3 +140,7 @@ jobs:
           for i in ${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}/app/build/*.tar.gz; do
             gh release upload  ${{ github.event.inputs.version }} $i
           done
+          for i in ${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}/app/build/*.sha256; do
+            gh release upload  ${{ github.event.inputs.version }} $i
+          done
+          gh release upload  ${{ github.event.inputs.version }} ${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}/app/build/SHASUMS256.txt
