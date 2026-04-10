@@ -111,10 +111,7 @@ jobs:
       - name: Create release
         if: env.create == '1'
         run: |
-          latestFlag=""
-          if [ "${{ env.latest_version }}" != "true" ]; then
-            latestFlag="--latest=false"
-          fi
+          latestFlag="--latest=true"
           gh release create ${{ github.event.inputs.version }} -R ${{ github.repository }} --title ${{ github.event.inputs.version }} --notes "**Full Changelog**: [${{ github.event.inputs.version }}](https://github.com/siyuan-note/siyuan/releases/tag/${{ github.event.inputs.version }})" ${latestFlag} || true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
