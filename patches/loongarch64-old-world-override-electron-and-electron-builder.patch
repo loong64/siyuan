@@ -19,7 +19,7 @@ index bc57e226c..70fc1f13d 100644
 +  "pnpm": {
 +    "overrides": {
 +      "electron": "31.7.7",
-+      "electron-builder": "npm:@loongdotjs/electron-builder"
++      "electron-builder": "npm:@loongdotjs/electron-builder@26.8.2-loong1"
 +    }
    }
  }
