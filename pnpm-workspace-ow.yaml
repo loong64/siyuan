@@ -1,0 +1,4 @@
+overrides:
+  "electron": "31.7.7"
+  "electron-builder": "npm:@loongdotjs/electron-builder@26.8.2-loong1"
+dangerouslyAllowAllBuilds: true

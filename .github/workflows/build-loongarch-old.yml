@@ -51,21 +51,21 @@ jobs:
           ref: ${{ github.event.inputs.version }}
           path: ${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}
 
-      - name: Applying Patch for SiYuan
+      - name: Copying pnpm-workspace
         run: |
-          git apply ${{ github.workspace }}/patches/loongarch64-old-world-override-electron-and-electron-builder.patch
+          cp -v ${{ github.workspace }}/pnpm-workspace-ow.yaml ${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}/app/pnpm-workspace.yaml
         working-directory: ${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version-file: ${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}/kernel/go.mod
       - run: go version
 
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: 24
 
       - name: Install Node pnpm
         run: npm install -g pnpm
@@ -91,13 +91,14 @@ jobs:
         run: go get github.com/go-ole/go-ole@6c7f902
 
       - name: Building Kernel
-        uses: OpenListTeam/cgo-actions@v1.2.4
+        uses: OpenListTeam/cgo-actions@v1
         with:
           dir: ${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}/kernel
           targets: 'linux-loong64-abi1.0'
           out-dir: "${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}/${{ matrix.config.kernel_path }}"
           output: ${{ matrix.config.kernel_name }}
           x-flags: github.com/${{ env.repo_owner }}/${{ env.repo_name }}/kernel/util.${{ matrix.config.build_args_suffix }}
+          tags: "fts5"
           github-token: ${{ secrets.GITHUB_TOKEN }}
         
       - name: Building Electron App
