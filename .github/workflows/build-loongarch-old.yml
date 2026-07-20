@@ -98,7 +98,7 @@ jobs:
           out-dir: "${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}/${{ matrix.config.kernel_path }}"
           output: ${{ matrix.config.kernel_name }}
           x-flags: github.com/${{ env.repo_owner }}/${{ env.repo_name }}/kernel/util.${{ matrix.config.build_args_suffix }}
-          tags: "fts5"
+          tags: "fts5 sqlcipher"
           github-token: ${{ secrets.GITHUB_TOKEN }}
         
       - name: Building Electron App
