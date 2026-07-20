@@ -68,11 +68,12 @@ jobs:
           node-version: 24
 
       - name: Install Node pnpm
-        run: npm install -g pnpm
+        run: npm install -g pnpm@11.10.0
         working-directory: ${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}/app
 
       - name: Install Node Dependencies
         run: |
+          git add . && git diff HEAD --cached
           electron_use_remote_checksums=1 pnpm install --no-frozen-lockfile
         working-directory: ${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}/app
 
