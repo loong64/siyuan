@@ -68,7 +68,7 @@ jobs:
           node-version: 24
 
       - name: Install Node pnpm
-        run: npm install -g pnpm@11.10.0
+        run: npm install -g pnpm@11.12.0
         working-directory: ${{ github.workspace }}/go/src/github.com/${{ env.repo_owner }}/${{ env.repo_name }}/app
 
       - name: Install Node Dependencies
